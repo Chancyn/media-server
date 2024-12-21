@@ -152,7 +152,7 @@ static void aio_rtmp_server_onsend(aio_rtmp_userptr_t /*ptr*/, size_t /*bytes*/)
 {
 }
 
-static void aio_rtmp_server_onclose(aio_rtmp_userptr_t ptr)
+static void aio_rtmp_server_onclose(void* param, aio_rtmp_userptr_t ptr)
 {
     AutoThreadLocker locker(s_locker);
     for (auto it = s_lives.begin(); it != s_lives.end(); ++it)
@@ -203,7 +203,7 @@ static aio_rtmp_userptr_t aio_rtmp_server_onplay(void* /*param*/, aio_rtmp_sessi
             }
         }
     }
-    
+
     std::shared_ptr<rtmp_player_t> player(new rtmp_player_t(session));
     AutoThreadLocker locker(s->locker);
     s->players.push_back(player);

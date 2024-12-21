@@ -238,7 +238,7 @@ int flv_muxer_opus(flv_muxer_t* flv, const void* data, size_t bytes, uint32_t pt
 
 		flv->audio_sequence_header = 1; // once only
 		audio.avpacket = FLV_SEQUENCE_HEADER;
-		
+
 		// Opus Head
 		m = flv_audio_tag_header_write(&audio, flv->ptr, flv->capacity);
         m += opus_head_save(&flv->a.opus, flv->ptr+m, flv->capacity-m);
@@ -561,6 +561,9 @@ int flv_muxer_metadata(flv_muxer_t* flv, const struct flv_metadata_t* metadata)
 	}
 
 	ptr = AMFWriteNamedString(ptr, end, "encoder", 7, FLV_MUXER, strlen(FLV_MUXER));
+	ptr = AMFWriteNamedString(ptr, end, "server", 6, metadata->server, strlen(metadata->server));
+	ptr = AMFWriteNamedString(ptr, end, "server_ver", 10, metadata->server_ver, strlen(metadata->server_ver));
+
 	ptr = AMFWriteObjectEnd(ptr, end);
 
 	return flv->handler(flv->param, FLV_TYPE_SCRIPT, flv->ptr, ptr - flv->ptr, 0);

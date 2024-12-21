@@ -16,7 +16,7 @@ struct aio_rtmp_server_handler_t
 {
 	/// aio transport close
 	/// @param[in] ptr create by onpublish/onplay
-	void (*onclose)(aio_rtmp_userptr_t ptr);
+	void (*onclose)(void* param, aio_rtmp_userptr_t ptr);
 
 	///push(client -> server)
 	///@param[in] type: live/record/append

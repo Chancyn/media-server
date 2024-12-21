@@ -10,7 +10,7 @@
 static aio_rtmp_userptr_t aio_rtmp_server_onpublish(void* param, aio_rtmp_session_t* /*session*/, const char* app, const char* stream, const char* type)
 {
 	printf("aio_rtmp_server_onpublish(%s, %s, %s)\n", app, stream, type);
-	
+
 	return flv_writer_create((const char*)param);
 }
 
@@ -33,7 +33,7 @@ static void aio_rtmp_server_onsend(aio_rtmp_userptr_t /*ptr*/, size_t /*bytes*/)
 {
 }
 
-static void aio_rtmp_server_onclose(aio_rtmp_userptr_t flv)
+static void aio_rtmp_server_onclose(void* param, aio_rtmp_userptr_t flv)
 {
 	flv_writer_destroy(flv);
 }

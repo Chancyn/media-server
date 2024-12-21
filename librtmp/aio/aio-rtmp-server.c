@@ -26,7 +26,7 @@ struct aio_rtmp_session_t
 	locker_t locker;
 	socklen_t salen;
 	struct sockaddr_storage sa;
-	
+
 	aio_rtmp_transport_t* aio; // aio rtmp transport
 	aio_rtmp_userptr_t usr; // user-defined parameter(return by oncreate)
 	rtmp_server_t* rtmp; // create by rtmp_server_create
@@ -172,10 +172,10 @@ static void rtmp_session_ondestroy(void* param)
 {
 	struct aio_rtmp_session_t* session;
 	session = (struct aio_rtmp_session_t*)param;
-	
+
 	// notify session stop
 	if(session->server->handle.onclose && session->usr)
-		session->server->handle.onclose(session->usr);
+		session->server->handle.onclose(session->server->param, session->usr);
 
 	if (session->rtmp)
 	{

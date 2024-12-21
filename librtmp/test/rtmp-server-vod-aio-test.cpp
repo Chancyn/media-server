@@ -131,7 +131,7 @@ static void aio_rtmp_server_onsend(aio_rtmp_userptr_t /*ptr*/, size_t /*bytes*/)
 {
 }
 
-static void aio_rtmp_server_onclose(aio_rtmp_userptr_t ptr)
+static void aio_rtmp_server_onclose(void* param, aio_rtmp_userptr_t ptr)
 {
 	// close thread
 

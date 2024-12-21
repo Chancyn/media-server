@@ -127,7 +127,7 @@ int hls_media_add_stream(hls_media_t* hls, int avtype, const void* extra, size_t
 		if(-1 == hls->audio)
 			hls->audio = mpeg_ts_add_stream(hls->ts, avtype, extra, bytes);
 		return hls->audio;
-	}	
+	}
 	else
 	{
 		if(-1 == hls->video)
