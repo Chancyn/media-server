@@ -168,6 +168,7 @@
     <ClInclude Include="..\librtsp\test\media\h265-file-reader.h" />
     <ClInclude Include="..\librtsp\test\media\h265-file-source.h" />
     <ClInclude Include="..\librtsp\test\media\mp4-file-reader.h" />
+    <ClInclude Include="..\librtsp\test\media\ps-file-reader.h" />
     <ClInclude Include="..\librtsp\test\media\vod-file-source.h" />
     <ClInclude Include="..\librtsp\test\media\h264-file-reader.h" />
     <ClInclude Include="..\librtsp\test\media\h264-file-source.h" />
@@ -261,6 +262,7 @@
     <ClCompile Include="..\librtsp\source\sdp\sdp-g7xx.c" />
     <ClCompile Include="..\librtsp\source\sdp\sdp-h264.c" />
     <ClCompile Include="..\librtsp\source\sdp\sdp-h265.c" />
+    <ClCompile Include="..\librtsp\source\sdp\sdp-h266.c" />
     <ClCompile Include="..\librtsp\source\sdp\sdp-mpeg2.c" />
     <ClCompile Include="..\librtsp\source\sdp\sdp-mpeg4.c" />
     <ClCompile Include="..\librtsp\source\sdp\sdp-opus.c" />
@@ -282,6 +284,7 @@
     <ClCompile Include="..\librtsp\test\media\mp4-file-reader.cpp" />
     <ClCompile Include="..\librtsp\test\media\mp4-file-source.cpp" />
     <ClCompile Include="..\librtsp\test\media\pcm-file-source.cpp" />
+    <ClCompile Include="..\librtsp\test\media\ps-file-reader.cpp" />
     <ClCompile Include="..\librtsp\test\media\ps-file-source.cpp" />
     <ClCompile Include="..\librtsp\test\media\vod-file-source.cpp" />
     <ClCompile Include="..\librtsp\test\rtp-streaming-test.cpp" />

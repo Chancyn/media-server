@@ -57,7 +57,7 @@ static uint32_t adaptation_filed_read(struct ts_adaptation_field_t *adp, const u
 		if(adp->OPCR_flag && i + 6 <= adp->adaptation_field_length + 1)
 		{
 			adp->original_program_clock_reference_base = (((uint64_t)data[i]) << 25) | ((uint64_t)data[i+1] << 17) | ((uint64_t)data[i+2] << 9) | ((uint64_t)data[i+3] << 1) | ((data[i+4] >> 7) & 0x01);
-			adp->original_program_clock_reference_extension = ((data[i+4] & 0x01) << 1) | data[i+5];
+			adp->original_program_clock_reference_extension = ((data[i+4] & 0x01) << 8) | data[i+5];
 
 			i += 6;
 		}
@@ -166,7 +166,7 @@ int ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
     uint32_t i, j, k;
 	uint32_t PID;
 	size_t consume;
-	unsigned int count;
+	unsigned int count, ver;
 	struct mpeg_bits_t reader;
     struct ts_packet_header_t pkhd;
 
@@ -232,9 +232,10 @@ int ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
 					if(pkhd.payload_unit_start_indicator)
 						i += 1; // pointer 0x00
 
+					ver = ts->pat.pmts[j].ver;
 					count = ts->pat.pmts[j].stream_count;
 					pmt_read(&ts->pat.pmts[j], data + i, bytes - i);
-					if(count != ts->pat.pmts[j].stream_count)
+					if(ver != ts->pat.pmts[j].ver || count != ts->pat.pmts[j].stream_count)
 						ts_demuxer_notify(ts, &ts->pat.pmts[j]);
 					break;
 				}
