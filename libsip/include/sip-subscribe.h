@@ -32,29 +32,21 @@ struct sip_subscribe_t
 	int state; // SUBSCRIBE_INIT
 
 	uint64_t expires;
-	char event[128];
-
+	struct sip_event_t event;
+	
 	// internal use only
-	struct list_head link;
-	void* evtsession; // user-defined event session
+	char* ptr;
 	int32_t ref;
-	int newdiaolog; // flag for remote dialog from sip dialogs link
 };
 
-struct sip_subscribe_t* sip_subscribe_create(const struct cstring_t* event);
+struct sip_subscribe_t* sip_subscribe_create(const struct sip_event_t* event);
 int sip_subscribe_release(struct sip_subscribe_t* subscribe);
 int sip_subscribe_addref(struct sip_subscribe_t* subscribe);
 
-// subscribe management
-int sip_subscribe_add(struct sip_agent_t* sip, struct sip_subscribe_t* subscribe);
-int sip_subscribe_remove(struct sip_agent_t* sip, struct sip_subscribe_t* subscribe);
+struct sip_subscribe_t* sip_subscribe_internal_create(struct sip_agent_t* sip, const struct sip_message_t* msg, const struct sip_event_t* event, int uac);
 
-/// call sip_subscribe_release
-struct sip_subscribe_t* sip_subscribe_fetch(struct sip_agent_t* sip, const struct cstring_t* callid, const struct cstring_t* local, const struct cstring_t* remote, const struct cstring_t* event);
-
-/// call sip_subscribe_release
-struct sip_subscribe_t* sip_subscribe_internal_fetch(struct sip_agent_t* sip, const struct sip_message_t* msg, const struct cstring_t* event, int uac, int* added);
-
+int sip_subscribe_id(struct cstring_t* id, const struct sip_subscribe_t* subscribe, char* ptr, int len);
+int sip_subscribe_id_with_message(struct cstring_t* id, const struct sip_message_t* msg, char* ptr, int len, int uas);
 
 #if defined(__cplusplus)
 }

@@ -10,8 +10,8 @@
 int sip_uac_subscribe_onreply(struct sip_uac_transaction_t* t, const struct sip_message_t* reply)
 {
 	int r;
-	int added;
-	const struct cstring_t *h;
+	char ptr[256];
+	struct cstring_t id;
 	struct sip_subscribe_t* subscribe;
 
 	if (reply->u.s.code < 200)
@@ -21,18 +21,20 @@ int sip_uac_subscribe_onreply(struct sip_uac_transaction_t* t, const struct sip_
 	subscribe = NULL;
 	if (200 <= reply->u.s.code && reply->u.s.code < 300)
 	{
-		subscribe = sip_subscribe_internal_fetch(t->agent, reply, &t->req->event, 1, &added);
+		subscribe = sip_subscribe_internal_create(t->agent, reply, &t->req->event, 1);
+		sip_subscribe_id(&id, subscribe, ptr, sizeof(ptr));
 
 		// call once only
 		//if (added)
-			r = t->onsubscribe(t->param, reply, t, subscribe, reply->u.s.code, &subscribe->evtsession);
+			r = t->onsubscribe(t->param, reply, t, subscribe, &id, reply->u.s.code);
 	}
 	else
 	{
 		// for subscribe expires 0, to sip_subscribe_remove
-		subscribe = sip_subscribe_fetch(t->agent, &t->req->callid, &t->req->from.tag, &t->req->to.tag, &t->req->event);
+		//subscribe = sip_subscribe_fetch(t->agent, &t->req->callid, &t->req->from.tag, &t->req->to.tag, &t->req->event);
+		sip_subscribe_id(&id, subscribe, ptr, sizeof(ptr));
 
-		r = t->onsubscribe(t->param, reply, t, subscribe, reply->u.s.code, subscribe ? &subscribe->evtsession : NULL);
+		r = t->onsubscribe(t->param, reply, t, subscribe, &id, reply->u.s.code);
 	}
 
 	if (subscribe)
@@ -55,17 +57,6 @@ int sip_uac_subscribe_onreply(struct sip_uac_transaction_t* t, const struct sip_
 int sip_uac_notify_onreply(struct sip_uac_transaction_t* t, const struct sip_message_t* reply)
 {
 	int r;
-	struct sip_subscribe_t* subscribe;
-
-	subscribe = sip_subscribe_fetch(t->agent, &reply->callid, &reply->from.tag, &reply->to.tag, &t->req->event);
-	if (!subscribe)
-	{
-		//return 0; // receive notify message before subscribe reply, discard it
-		
-		// custom notify message ???
-		assert(t->req && !cstrvalid(&t->req->to.tag));
-		return t->onreply(t->param, reply, t, reply->u.s.code);
-	}
 
 	// NOTICE: ignore notify before subscribe created
 	r = t->onreply(t->param, reply, t, reply->u.s.code);
@@ -73,7 +64,6 @@ int sip_uac_notify_onreply(struct sip_uac_transaction_t* t, const struct sip_mes
 	//if (0 == cstrcmp(&reply->substate.state, SIP_SUBSCRIPTION_STATE_TERMINATED))
 	//	sip_subscribe_remove(t->agent, subscribe);
 
-	sip_subscribe_release(subscribe);
 	return r;
 }
 
@@ -99,16 +89,17 @@ struct sip_uac_transaction_t* sip_uac_subscribe(struct sip_agent_t* sip, const c
 
 struct sip_uac_transaction_t* sip_uac_resubscribe(struct sip_agent_t* sip, struct sip_subscribe_t* subscribe, int expires, sip_uac_onsubscribe onsubscribe, void* param)
 {
+	char event[128];
 	struct sip_message_t* req;
 	struct sip_uac_transaction_t* t;
 
-	if (!sip || !subscribe || !subscribe->dialog)
+	if (!sip || !subscribe || !subscribe->dialog || sip_event_write(&subscribe->event, event, event+sizeof(event)) <= 0)
 		return NULL;
 
 	++subscribe->dialog->local.id;
 	req = sip_message_create(SIP_MESSAGE_REQUEST);
 	if (0 != sip_message_init2(req, SIP_METHOD_SUBSCRIBE, subscribe->dialog)
-		|| 0 != sip_message_add_header(req, SIP_HEADER_EVENT, subscribe->event)
+		|| 0 != sip_message_add_header(req, SIP_HEADER_EVENT, event)
 		|| 0 != sip_message_add_header_int(req, "Expires", expires))
 	{
 		sip_message_destroy(req);
@@ -123,16 +114,17 @@ struct sip_uac_transaction_t* sip_uac_resubscribe(struct sip_agent_t* sip, struc
 
 struct sip_uac_transaction_t* sip_uac_notify(struct sip_agent_t* sip, struct sip_subscribe_t* subscribe, const char* state, sip_uac_onreply onnotify, void* param)
 {
+	char event[128];
 	struct sip_message_t* req;
 	struct sip_uac_transaction_t* t;
 
-	if (!subscribe || !subscribe->dialog)
+	if (!subscribe || !subscribe->dialog || sip_event_write(&subscribe->event, event, event + sizeof(event)) <= 0)
 		return NULL;
 
 	++subscribe->dialog->local.id;
 	req = sip_message_create(SIP_MESSAGE_REQUEST);
 	if(0 != sip_message_init2(req, SIP_METHOD_NOTIFY, subscribe->dialog)
-		|| 0 != sip_message_add_header(req, SIP_HEADER_EVENT, subscribe->event)
+		|| 0 != sip_message_add_header(req, SIP_HEADER_EVENT, event)
 		|| 0 != sip_message_add_header(req, SIP_HEADER_SUBSCRIBE_STATE, state))
 	{
 		--subscribe->dialog->local.id;
