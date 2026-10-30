@@ -35,9 +35,19 @@ void rtp_payload_encode_destroy(void* encoder);
 
 /// Get rtp last packet sequence number and timestamp
 /// @param[in] encoder RTP packet encoder(create by rtp_payload_encode_create)
-/// @param[in] seq RTP header sequence number
+/// @param[in] seq RTP header sequence number (next packet to be sent)
 /// @param[in] timestamp RTP header timestamp
 void rtp_payload_encode_getinfo(void* encoder, uint16_t* seq, uint32_t* timestamp);
+
+/// Reserve `count` consecutive RTP sequence numbers from the encoder's shared
+/// sequence counter. Used to allocate sequence numbers for out-of-band packets
+/// (e.g. RFC5109 ULPFEC) so that media and FEC packets share one RTP sequence
+/// space (WebRTC convention).
+/// @param[in] encoder RTP packet encoder(create by rtp_payload_encode_create)
+/// @param[in] count number of sequence numbers to reserve (1..32767)
+/// @param[out] first_seq first reserved sequence number
+/// @return 0-ok, <0-unsupported or invalid argument (counter unchanged)
+int rtp_payload_encode_reserve_seq(void* encoder, uint16_t count, uint16_t* first_seq);
 
 /// Encode RTP packet
 /// @param[in] encoder RTP packet encoder(create by rtp_payload_encode_create)

@@ -22,6 +22,10 @@ struct rtp_payload_encode_t
 
 	void(*get_info)(void* packer, uint16_t* seq, uint32_t* timestamp);
 
+	/// Reserve consecutive sequence numbers for out-of-band packets (e.g. FEC).
+	/// Optional: NULL means unsupported. Returns the first reserved seq.
+	uint16_t(*reserve_seq)(void* packer, uint16_t count);
+
 	/// PS/H.264 Elementary Stream to RTP Packet
 	/// @param[in] packer
 	/// @param[in] data stream data

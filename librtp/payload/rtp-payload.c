@@ -56,6 +56,18 @@ void rtp_payload_encode_getinfo(void* encoder, uint16_t* seq, uint32_t* timestam
 	ctx->encoder->get_info(ctx->packer, seq, timestamp);
 }
 
+int rtp_payload_encode_reserve_seq(void* encoder, uint16_t count, uint16_t* first_seq)
+{
+	struct rtp_payload_delegate_t* ctx;
+	if (!encoder || !first_seq || count == 0)
+		return -1;
+	ctx = (struct rtp_payload_delegate_t*)encoder;
+	if (!ctx->encoder || !ctx->encoder->reserve_seq)
+		return -1;
+	*first_seq = ctx->encoder->reserve_seq(ctx->packer, count);
+	return 0;
+}
+
 int rtp_payload_encode_input(void* encoder, const void* data, int bytes, uint32_t timestamp)
 {
 	struct rtp_payload_delegate_t* ctx;

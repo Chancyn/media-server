@@ -69,6 +69,16 @@ static void rtp_h264_pack_destroy(void* pack)
 	free(packer);
 }
 
+static uint16_t rtp_h264_pack_reserve_seq(void* pack, uint16_t count)
+{
+	struct rtp_encode_h264_t *packer;
+	uint16_t first;
+	packer = (struct rtp_encode_h264_t *)pack;
+	first = (uint16_t)packer->pkt.rtp.seq;
+	packer->pkt.rtp.seq = (uint16_t)(packer->pkt.rtp.seq + count);
+	return first;
+}
+
 static void rtp_h264_pack_get_info(void* pack, uint16_t* seq, uint32_t* timestamp)
 {
 	struct rtp_encode_h264_t *packer;
@@ -191,6 +201,7 @@ struct rtp_payload_encode_t *rtp_h264_encode()
 		rtp_h264_pack_create,
 		rtp_h264_pack_destroy,
 		rtp_h264_pack_get_info,
+		rtp_h264_pack_reserve_seq,
 		rtp_h264_pack_input,
 	};
 

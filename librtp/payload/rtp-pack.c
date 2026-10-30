@@ -43,6 +43,16 @@ void rtp_pack_destroy(void* p)
 	free(packer);
 }
 
+uint16_t rtp_pack_reserve_seq(void* p, uint16_t count)
+{
+	struct rtp_packer_t *packer;
+	uint16_t first;
+	packer = (struct rtp_packer_t *)p;
+	first = (uint16_t)packer->pkt.rtp.seq;
+	packer->pkt.rtp.seq = (uint16_t)(packer->pkt.rtp.seq + count);
+	return first;
+}
+
 void rtp_pack_get_info(void* p, uint16_t* seq, uint32_t* timestamp)
 {
 	struct rtp_packer_t *packer;
@@ -97,6 +107,7 @@ struct rtp_payload_encode_t *rtp_common_encode()
 		rtp_pack_create,
 		rtp_pack_destroy,
 		rtp_pack_get_info,
+		rtp_pack_reserve_seq,
 		rtp_pack_input,
 	};
 
