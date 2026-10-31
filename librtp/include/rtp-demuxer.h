@@ -37,6 +37,21 @@ int rtp_demuxer_input(struct rtp_demuxer_t* rtp, const void* data, int bytes);
 /// @return 0-ok, <0-error
 int rtp_demuxer_set_skip_pt(struct rtp_demuxer_t* rtp, int pt);
 
+/// 缺口分类器（共享 seq FEC 块图）：返回 1=媒体，2=非媒体(FEC 占位)，0=未知。
+/// 仅当一段缺口全部返回 2 时推进解包器序号（占位无载荷）；否则保持上游
+/// "缺号丢弃已组装 NAL"语义，避免把坏 NAL 送进解码器造成花屏。
+int rtp_demuxer_set_gap_classify(struct rtp_demuxer_t* rtp,
+                                 int (*fn)(void* ctx, uint16_t seq), void* ctx);
+
+/// 缺口策略（配合 gap_classify 使用；默认 RTP_GAP_POLICY_STRICT，与上游一致）：
+///   STRICT   = 缺号一律交给解包器处理（上游行为：丢弃已组装 NAL）
+///   TOLERANT = 缺号一律推进序号（不丢 NAL；真实媒体丢失可能产生坏 NAL）
+///   HYBRID   = 缺口含"确认媒体"时交给解包器丢弃；FEC 占位/未知则推进
+#define RTP_GAP_POLICY_STRICT   0
+#define RTP_GAP_POLICY_TOLERANT 1
+#define RTP_GAP_POLICY_HYBRID   2
+int rtp_demuxer_set_gap_policy(struct rtp_demuxer_t* rtp, int policy);
+
 /// @return >0-rtcp report length, 0-don't need send rtcp
 int rtp_demuxer_rtcp(struct rtp_demuxer_t* rtp, void* buf, int len);
 

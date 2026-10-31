@@ -28,6 +28,14 @@ struct rtp_demuxer_t
     void* param;
 
     int skip_pt; // >=0: 该 PT 入队占位但不解包（共享 seq FEC）
+
+    // 缺口分类（共享 seq FEC 块图）：1=媒体 2=非媒体(FEC 占位) 0=未知。
+    // 仅当缺口全部为 2 时推进解包器序号；否则按上游丢弃（防坏 NAL 花屏）。
+    int (*gap_classify)(void* ctx, uint16_t seq);
+    void* gap_classify_ctx;
+    int gap_policy; // RTP_GAP_POLICY_xxx
+    uint16_t last_seq;
+    int last_seq_valid;
 };
 
 static int rtp_onpacket(void* param, const void *packet, int bytes, uint32_t timestamp, int flags)
@@ -118,6 +126,10 @@ static int rtp_demuxer_init(struct rtp_demuxer_t* rtp, int jitter, int frequency
     handler.free = NULL;
     handler.packet = rtp_onpacket;
     rtp->skip_pt = -1; // 默认关闭：与上游行为逐字节一致
+    rtp->gap_classify = NULL;
+    rtp->gap_classify_ctx = NULL;
+    rtp->gap_policy = RTP_GAP_POLICY_STRICT;
+    rtp->last_seq_valid = 0;
     rtp->payload = rtp_payload_decode_create(payload, encoding, &handler, rtp);
     
     timestamp = (uint32_t)rtpclock();
@@ -173,13 +185,31 @@ int rtp_demuxer_destroy(struct rtp_demuxer_t** pprtp)
     return 0;
 }
 
+int rtp_demuxer_set_gap_policy(struct rtp_demuxer_t* rtp, int policy)
+{
+    if (!rtp)
+        return -EINVAL;
+    if (policy != RTP_GAP_POLICY_TOLERANT && policy != RTP_GAP_POLICY_HYBRID)
+        policy = RTP_GAP_POLICY_STRICT;
+    rtp->gap_policy = policy;
+    return 0;
+}
+
+int rtp_demuxer_set_gap_classify(struct rtp_demuxer_t* rtp,
+                                 int (*fn)(void* ctx, uint16_t seq), void* ctx)
+{
+    if (!rtp)
+        return -EINVAL;
+    rtp->gap_classify = fn;
+    rtp->gap_classify_ctx = ctx;
+    return 0;
+}
+
 int rtp_demuxer_set_skip_pt(struct rtp_demuxer_t* rtp, int pt)
 {
     if (!rtp)
         return -EINVAL;
     rtp->skip_pt = (pt >= 0 && pt < 128) ? pt : -1;
-    // 共享 seq：缺号可能只是 FEC 占位槽，解包器不得因此丢弃 NAL
-    rtp_payload_decode_set_tolerant(rtp->payload, rtp->skip_pt >= 0 ? 1 : 0);
     return 0;
 }
 
@@ -217,6 +247,37 @@ int rtp_demuxer_input(struct rtp_demuxer_t* rtp, const void* data, int bytes)
             bytes = *(int*)((uint8_t*)pkt - sizeof(int) /*bytes*/ );
 
             r = rtp_onreceived(rtp->rtp, pkt + 1, bytes);
+            // 缺口处理：只有"全部是 FEC 占位"的缺口才推进解包器序号（无载荷），
+            // 媒体/未知缺口保持上游语义（解包器丢弃已组装 NAL，避免坏 NAL 花屏）。
+            if (rtp->last_seq_valid) {
+                const uint16_t expect = (uint16_t)(rtp->last_seq + 1);
+                const uint32_t missing = (uint16_t)(pkt->rtp.seq - expect);
+                if (missing > 0 && missing <= 64 && rtp->gap_policy != RTP_GAP_POLICY_STRICT) {
+                    int advance = 0;
+                    if (rtp->gap_policy == RTP_GAP_POLICY_TOLERANT) {
+                        advance = 1;
+                    } else if (rtp->gap_classify != NULL) {
+                        // HYBRID：1=确认媒体 → 不推进（解包器丢弃 NAL，防坏 NAL
+                        // 花屏）；2=FEC 占位 / 0=未知 → 推进（未知多为丢失的
+                        // FEC 包，容忍可避免整帧冻结）。
+                        int has_media = 0;
+                        for (uint32_t i = 0; i < missing; i++) {
+                            if (rtp->gap_classify(rtp->gap_classify_ctx,
+                                                  (uint16_t)(expect + i)) == 1) {
+                                has_media = 1;
+                                break;
+                            }
+                        }
+                        advance = !has_media;
+                    }
+                    if (advance) {
+                        for (uint32_t i = 0; i < missing; i++)
+                            rtp_payload_decode_skip_seq(rtp->payload, (uint16_t)(expect + i));
+                    }
+                }
+            }
+            rtp->last_seq = pkt->rtp.seq;
+            rtp->last_seq_valid = 1;
             // 共享 seq：FEC 包占位但无媒体载荷；推进解包器 seq 连续性，不送载荷
             if (rtp->skip_pt >= 0 && pkt->rtp.pt == rtp->skip_pt)
                 r = rtp_payload_decode_skip_seq(rtp->payload, pkt->rtp.seq);

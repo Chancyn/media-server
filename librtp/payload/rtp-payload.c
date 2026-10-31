@@ -118,16 +118,6 @@ int rtp_payload_decode_skip_seq(void* decoder, uint16_t seq)
 	return ctx->decoder->skip(ctx->packer, seq);
 }
 
-int rtp_payload_decode_set_tolerant(void* decoder, int on)
-{
-	struct rtp_payload_delegate_t* ctx;
-	ctx = (struct rtp_payload_delegate_t*)decoder;
-	if (!ctx || !ctx->decoder)
-		return -EINVAL;
-	if (!ctx->decoder->set_tolerant)
-		return 0;
-	return ctx->decoder->set_tolerant(ctx->packer, on);
-}
 
 // Default max packet size (1500, minus allowance for IP, UDP, UMTP headers)
 // (Also, make it a multiple of 4 bytes, just in case that matters.)

@@ -79,9 +79,6 @@ int rtp_payload_decode_input(void* decoder, const void* packet, int bytes);
 /// @return 0-ok, <0-error
 int rtp_payload_decode_skip_seq(void* decoder, uint16_t seq);
 
-/// 缺口策略：1=缺号不丢弃正在组装的 NAL（共享 seq，FEC 占位槽）；
-/// 0=上游行为（缺号丢弃）。默认 0。
-int rtp_payload_decode_set_tolerant(void* decoder, int on);
 
 /// Set/Get rtp encode packet size(include rtp header)
 void rtp_packet_setsize(int bytes);

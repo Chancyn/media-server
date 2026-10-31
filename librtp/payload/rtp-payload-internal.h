@@ -52,9 +52,6 @@ struct rtp_payload_decode_t
 	/// 可选：NULL 表示该载荷类型不支持（忽略）。
 	int (*skip)(void* decoder, uint16_t seq);
 
-	/// 缺口策略：on=缺号只标记 LOST、不丢弃正在组装的 NAL（共享 seq 的
-	/// FEC 占位槽场景）；off=保持上游行为（缺号丢弃）。可选：NULL=不支持。
-	int (*set_tolerant)(void* decoder, int on);
 };
 
 struct rtp_payload_encode_t *rtp_ts_encode(void);

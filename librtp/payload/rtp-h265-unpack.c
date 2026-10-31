@@ -39,7 +39,6 @@ struct rtp_decode_h265_t
 
 	int flags;
 	int using_donl_field;
-	int tolerant; // 1=缺号不丢弃 NAL（共享 seq，FEC 占位槽）
 };
 
 static void* rtp_h265_unpack_create(struct rtp_payload_t *handler, void* param)
@@ -250,8 +249,8 @@ static int rtp_h265_unpack_input(void* p, const void* packet, int bytes)
 		// 共享 seq：缺号可能只是 FEC 占位槽（该 seq 无媒体载荷），不能因此
 		// 丢弃正在组装的 NAL；仅标记丢包，帧级完整性由 AU 指标/上层策略判定。
 		unpacker->flags |= RTP_PAYLOAD_FLAG_PACKET_LOST;
-		if (!unpacker->tolerant)
-			unpacker->size = 0; // 上游行为：缺号丢弃已组装数据
+		unpacker->size = 0; // 缺号丢弃已组装数据（共享 seq 的 FEC 占位由
+		                    // demuxer 用 skip_seq 精确推进，不会走到这里）
 	}
 	unpacker->seq = (uint16_t)pkt.rtp.seq;
 
@@ -286,15 +285,6 @@ static int rtp_h265_unpack_input(void* p, const void* packet, int bytes)
 	}
 }
 
-static int rtp_h265_unpack_set_tolerant(void* p, int on)
-{
-	struct rtp_decode_h265_t* unpacker = (struct rtp_decode_h265_t*)p;
-	if (!unpacker)
-		return -EINVAL;
-	unpacker->tolerant = on ? 1 : 0;
-	return 0;
-}
-
 static int rtp_h265_unpack_skip(void* p, uint16_t seq)
 {
 	struct rtp_decode_h265_t* unpacker;
@@ -316,7 +306,6 @@ struct rtp_payload_decode_t *rtp_h265_decode()
 		rtp_h265_unpack_destroy,
 		rtp_h265_unpack_input,
 		rtp_h265_unpack_skip,
-		rtp_h265_unpack_set_tolerant,
 	};
 
 	return &unpacker;
