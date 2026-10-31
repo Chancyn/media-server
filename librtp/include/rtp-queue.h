@@ -12,6 +12,10 @@ typedef struct rtp_queue_t rtp_queue_t;
 rtp_queue_t* rtp_queue_create(int threshold, int frequency, void (*freepkt)(void*, struct rtp_packet_t*), void* param);
 int rtp_queue_destroy(rtp_queue_t* queue);
 
+/// 运行期调整重排阈值（ms）：缺号等待"媒体时间差"超过该值即判丢。
+/// 供上层按实测恢复年龄自适应（共享 seq 的抖动/长 RTT 场景）。
+void rtp_queue_set_threshold(rtp_queue_t* queue, int threshold);
+
 /// @return 1-ok, 0-discard, <0-error
 int rtp_queue_write(rtp_queue_t* queue, struct rtp_packet_t* pkt);
 struct rtp_packet_t* rtp_queue_read(rtp_queue_t* queue);

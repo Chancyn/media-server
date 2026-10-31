@@ -195,6 +195,14 @@ int rtp_demuxer_set_gap_policy(struct rtp_demuxer_t* rtp, int policy)
     return 0;
 }
 
+int rtp_demuxer_set_jitter(struct rtp_demuxer_t* rtp, int jitter_ms)
+{
+    if (!rtp || !rtp->queue)
+        return -EINVAL;
+    rtp_queue_set_threshold(rtp->queue, jitter_ms);
+    return 0;
+}
+
 int rtp_demuxer_set_gap_classify(struct rtp_demuxer_t* rtp,
                                  int (*fn)(void* ctx, uint16_t seq), void* ctx)
 {

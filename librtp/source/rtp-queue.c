@@ -66,6 +66,15 @@ struct rtp_queue_t* rtp_queue_create(int threshold, int frequency, void(*freepkt
 	return q;
 }
 
+void rtp_queue_set_threshold(struct rtp_queue_t* q, int threshold)
+{
+	if (!q)
+		return;
+	if (threshold < 0)
+		threshold = 0;
+	q->threshold = threshold;
+}
+
 int rtp_queue_destroy(struct rtp_queue_t* q)
 {
 	rtp_queue_reset(q);

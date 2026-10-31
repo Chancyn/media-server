@@ -52,6 +52,9 @@ int rtp_demuxer_set_gap_classify(struct rtp_demuxer_t* rtp,
 #define RTP_GAP_POLICY_HYBRID   2
 int rtp_demuxer_set_gap_policy(struct rtp_demuxer_t* rtp, int policy);
 
+/// 运行期调整 jitter 重排阈值（ms）；上层可据实测恢复年龄自适应。
+int rtp_demuxer_set_jitter(struct rtp_demuxer_t* rtp, int jitter_ms);
+
 /// @return >0-rtcp report length, 0-don't need send rtcp
 int rtp_demuxer_rtcp(struct rtp_demuxer_t* rtp, void* buf, int len);
 
