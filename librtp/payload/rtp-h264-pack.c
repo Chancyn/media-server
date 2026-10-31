@@ -129,7 +129,7 @@ static int rtp_h264_pack_fu_a(struct rtp_encode_h264_t *packer, const uint8_t* n
 	assert(bytes > 0);
 
 	// FU-A start
-	for (fu_header |= FU_START; 0 == r && bytes > 0; ++packer->pkt.rtp.seq)
+	for (fu_header |= FU_START; 0 == r && bytes > 0; )
 	{
 		if (bytes + RTP_FIXED_HEADER <= packer->size - N_FU_HEADER)
 		{
@@ -160,6 +160,9 @@ static int rtp_h264_pack_fu_a(struct rtp_encode_h264_t *packer, const uint8_t* n
 		rtp[n + 1] = fu_header;
 		memcpy(rtp + n + N_FU_HEADER, packer->pkt.payload, packer->pkt.payloadlen);
 
+		// 回调前推进 seq（与单 NAL 路径一致）：回调内可能预留 seq 给 FEC 等
+		// 带外包，必须看到“当前包之后”的序号。
+		++packer->pkt.rtp.seq;
 		r = packer->handler.packet(packer->cbparam, rtp, n + N_FU_HEADER + packer->pkt.payloadlen, packer->pkt.rtp.timestamp, 0);
 		packer->handler.free(packer->cbparam, rtp);
 

@@ -74,7 +74,7 @@ int rtp_pack_input(void* p, const void* data, int bytes, uint32_t timestamp)
 	packer->pkt.rtp.timestamp = timestamp; // (uint32_t)time * packer->frequency / 1000; // ms -> 8KHZ
 	packer->pkt.rtp.m = 0; // marker bit alway 0
 
-	for(ptr = (const uint8_t *)data; 0 == r && bytes > 0; ++packer->pkt.rtp.seq)
+	for(ptr = (const uint8_t *)data; 0 == r && bytes > 0; )
 	{
 		packer->pkt.payload = ptr;
 		packer->pkt.payloadlen = (bytes + RTP_FIXED_HEADER) <= packer->size ? bytes : (packer->size - RTP_FIXED_HEADER);
