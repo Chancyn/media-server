@@ -26,6 +26,8 @@ struct rtp_demuxer_t
     
     rtp_demuxer_onpacket onpkt;
     void* param;
+
+    int skip_pt; // >=0: 该 PT 入队占位但不解包（共享 seq FEC）
 };
 
 static int rtp_onpacket(void* param, const void *packet, int bytes, uint32_t timestamp, int flags)
@@ -115,6 +117,7 @@ static int rtp_demuxer_init(struct rtp_demuxer_t* rtp, int jitter, int frequency
     handler.alloc = NULL;
     handler.free = NULL;
     handler.packet = rtp_onpacket;
+    rtp->skip_pt = -1; // 默认关闭：与上游行为逐字节一致
     rtp->payload = rtp_payload_decode_create(payload, encoding, &handler, rtp);
     
     timestamp = (uint32_t)rtpclock();
@@ -170,6 +173,16 @@ int rtp_demuxer_destroy(struct rtp_demuxer_t** pprtp)
     return 0;
 }
 
+int rtp_demuxer_set_skip_pt(struct rtp_demuxer_t* rtp, int pt)
+{
+    if (!rtp)
+        return -EINVAL;
+    rtp->skip_pt = (pt >= 0 && pt < 128) ? pt : -1;
+    // 共享 seq：缺号可能只是 FEC 占位槽，解包器不得因此丢弃 NAL
+    rtp_payload_decode_set_tolerant(rtp->payload, rtp->skip_pt >= 0 ? 1 : 0);
+    return 0;
+}
+
 int rtp_demuxer_input(struct rtp_demuxer_t* rtp, const void* data, int bytes)
 {
     int r;
@@ -204,7 +217,11 @@ int rtp_demuxer_input(struct rtp_demuxer_t* rtp, const void* data, int bytes)
             bytes = *(int*)((uint8_t*)pkt - sizeof(int) /*bytes*/ );
 
             r = rtp_onreceived(rtp->rtp, pkt + 1, bytes);
-            r = rtp_payload_decode_input(rtp->payload, pkt + 1, bytes);
+            // 共享 seq：FEC 包占位但无媒体载荷；推进解包器 seq 连续性，不送载荷
+            if (rtp->skip_pt >= 0 && pkt->rtp.pt == rtp->skip_pt)
+                r = rtp_payload_decode_skip_seq(rtp->payload, pkt->rtp.seq);
+            else
+                r = rtp_payload_decode_input(rtp->payload, pkt + 1, bytes);
             rtp_demuxer_freepkt(rtp, pkt);
             if(r < 0)
                 return r;

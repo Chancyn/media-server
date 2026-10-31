@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <errno.h>
 
 #define TS_PACKET_SIZE 188
 
@@ -104,6 +105,28 @@ int rtp_payload_decode_input(void* decoder, const void* packet, int bytes)
 	struct rtp_payload_delegate_t* ctx;
 	ctx = (struct rtp_payload_delegate_t*)decoder;
 	return ctx->decoder->input(ctx->packer, packet, bytes);
+}
+
+int rtp_payload_decode_skip_seq(void* decoder, uint16_t seq)
+{
+	struct rtp_payload_delegate_t* ctx;
+	ctx = (struct rtp_payload_delegate_t*)decoder;
+	if (!ctx || !ctx->decoder)
+		return -EINVAL;
+	if (!ctx->decoder->skip)
+		return 0; // 该载荷类型不支持占位推进：忽略
+	return ctx->decoder->skip(ctx->packer, seq);
+}
+
+int rtp_payload_decode_set_tolerant(void* decoder, int on)
+{
+	struct rtp_payload_delegate_t* ctx;
+	ctx = (struct rtp_payload_delegate_t*)decoder;
+	if (!ctx || !ctx->decoder)
+		return -EINVAL;
+	if (!ctx->decoder->set_tolerant)
+		return 0;
+	return ctx->decoder->set_tolerant(ctx->packer, on);
 }
 
 // Default max packet size (1500, minus allowance for IP, UDP, UMTP headers)

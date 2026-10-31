@@ -47,6 +47,14 @@ struct rtp_payload_decode_t
 	/// @param[in] time stream UTC time
 	/// @return 1-packet handled, 0-packet discard, <0-failed
 	int (*input)(void* decoder, const void* packet, int bytes);
+
+	/// 通知解包器：该 seq 已被非媒体包占用（无载荷），仅推进 seq 连续性。
+	/// 可选：NULL 表示该载荷类型不支持（忽略）。
+	int (*skip)(void* decoder, uint16_t seq);
+
+	/// 缺口策略：on=缺号只标记 LOST、不丢弃正在组装的 NAL（共享 seq 的
+	/// FEC 占位槽场景）；off=保持上游行为（缺号丢弃）。可选：NULL=不支持。
+	int (*set_tolerant)(void* decoder, int on);
 };
 
 struct rtp_payload_encode_t *rtp_ts_encode(void);

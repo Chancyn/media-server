@@ -74,6 +74,15 @@ void rtp_payload_decode_destroy(void* decoder);
 /// @return 1-packet handled, 0-packet discard, <0-failed
 int rtp_payload_decode_input(void* decoder, const void* packet, int bytes);
 
+/// 通知解包器：该 seq 已被非媒体包（如共享 seq 的 FEC）占用，无媒体载荷。
+/// 仅推进 seq 连续性，避免解包器把该 seq 当丢包整段丢弃。
+/// @return 0-ok, <0-error
+int rtp_payload_decode_skip_seq(void* decoder, uint16_t seq);
+
+/// 缺口策略：1=缺号不丢弃正在组装的 NAL（共享 seq，FEC 占位槽）；
+/// 0=上游行为（缺号丢弃）。默认 0。
+int rtp_payload_decode_set_tolerant(void* decoder, int on);
+
 /// Set/Get rtp encode packet size(include rtp header)
 void rtp_packet_setsize(int bytes);
 int rtp_packet_getsize(void);

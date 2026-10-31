@@ -28,6 +28,15 @@ int rtp_demuxer_destroy(struct rtp_demuxer_t** rtp);
 /// @return >0-rtcp message, 0-ok, <0-error
 int rtp_demuxer_input(struct rtp_demuxer_t* rtp, const void* data, int bytes);
 
+/// 占位但不解包的 RTP payload type（共享 seq 的 FEC 包）。
+/// 该 PT 的包照常入 jitter 队列（占 seq、计入 RR 收包），但不送 payload
+/// 解码器；用于共享 seq 模式下让 FEC 包"占号无载荷"，避免被当成媒体丢包
+/// 或进入 depacketizer。RFC 5109 FEC 包本就是同 SSRC 的合法 RTP 包，接收端
+/// 按 PT 分流即可，不解包不改变协议行为。
+/// @param[in] pt payload type；-1 或 >=128 关闭（默认关闭）
+/// @return 0-ok, <0-error
+int rtp_demuxer_set_skip_pt(struct rtp_demuxer_t* rtp, int pt);
+
 /// @return >0-rtcp report length, 0-don't need send rtcp
 int rtp_demuxer_rtcp(struct rtp_demuxer_t* rtp, void* buf, int len);
 
