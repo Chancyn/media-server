@@ -126,10 +126,11 @@ static int rtp_mp4a_latm_pack_input(void* pack, const void* data, int bytes, uin
 struct rtp_payload_encode_t *rtp_mp4a_latm_encode()
 {
 	static struct rtp_payload_encode_t encode = {
-		rtp_mp4a_latm_pack_create,
-		rtp_mp4a_latm_pack_destroy,
-		rtp_mp4a_latm_pack_get_info,
-		rtp_mp4a_latm_pack_input,
+		.create = rtp_mp4a_latm_pack_create,
+		.destroy = rtp_mp4a_latm_pack_destroy,
+		.get_info = rtp_mp4a_latm_pack_get_info,
+		.reserve_seq = NULL,  /* 可选能力：本 packer 不支持外带 seq 预留 */
+		.input = rtp_mp4a_latm_pack_input,
 	};
 
 	return &encode;

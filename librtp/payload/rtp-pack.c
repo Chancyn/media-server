@@ -104,11 +104,11 @@ int rtp_pack_input(void* p, const void* data, int bytes, uint32_t timestamp)
 struct rtp_payload_encode_t *rtp_common_encode()
 {
 	static struct rtp_payload_encode_t packer = {
-		rtp_pack_create,
-		rtp_pack_destroy,
-		rtp_pack_get_info,
-		rtp_pack_reserve_seq,
-		rtp_pack_input,
+		.create = rtp_pack_create,
+		.destroy = rtp_pack_destroy,
+		.get_info = rtp_pack_get_info,
+		.reserve_seq = rtp_pack_reserve_seq,
+		.input = rtp_pack_input,
 	};
 
 	return &packer;

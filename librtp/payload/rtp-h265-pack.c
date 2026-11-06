@@ -194,11 +194,11 @@ static int rtp_h265_pack_input(void* pack, const void* h265, int bytes, uint32_t
 struct rtp_payload_encode_t *rtp_h265_encode()
 {
 	static struct rtp_payload_encode_t packer = {
-		rtp_h265_pack_create,
-		rtp_h265_pack_destroy,
-		rtp_h265_pack_get_info,
-		rtp_h265_pack_reserve_seq,
-		rtp_h265_pack_input,
+		.create = rtp_h265_pack_create,
+		.destroy = rtp_h265_pack_destroy,
+		.get_info = rtp_h265_pack_get_info,
+		.reserve_seq = rtp_h265_pack_reserve_seq,
+		.input = rtp_h265_pack_input,
 	};
 
 	return &packer;
